@@ -1,0 +1,50 @@
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+# Load the data
+csv_file_path = "C:/dev/Output/Sample_Customer_Churn_Data.csv"
+df = pd.read_csv(csv_file_path)
+
+# Remove duplicate rows, if any
+df = df.drop_duplicates()
+
+# Since the data is synthetically generated, we will assume no missing values are present.
+# If there were missing values, you would handle them here.
+
+# Identify categorical columns that need to be encoded
+categorical_columns = ['Product Usage Frequency', 'Gender', 'Income Level', 
+                       'Geographic Location', 'Subscription Type', 'Contract Type', 
+                       'Payment Method', 'Feature Utilization', 'Upgrade/Downgrade Status']
+
+# Identify numerical columns that need to be scaled
+numerical_columns = ['Tenure', 'Number of Support Tickets', 'Customer Satisfaction Score',
+                     'Recent Activity Score', 'Engagement Score', 'Age', 'Account Age', 
+                     'Monthly Charges', 'Total Charges', 'Last Interaction', 
+                     'Number of Interactions', 'Data Usage']
+
+# Define the ColumnTransformer to apply transformations to different columns
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_columns),
+        ('cat', OneHotEncoder(), categorical_columns)
+    ])
+
+# Apply the transformations
+df_processed = preprocessor.fit_transform(df)
+
+# df_processed is a NumPy array after the transformation. 
+# To convert it back to a DataFrame we need to handle the one-hot encoded column names.
+# Get the feature names for the one-hot encoded categorical variables
+cat_features = preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_columns)
+# Combine with numerical feature names
+all_features = numerical_columns + cat_features.tolist()
+
+# Convert the processed array back to a DataFrame
+df_transformed = pd.DataFrame(df_processed, columns=all_features)
+
+# If you dropped or transformed the 'Customer ID', add it back
+df_transformed['Customer ID'] = df['Customer ID']
+
+# Save the processed data to a new CSV file
+df_transformed.to_csv('C:/dev/Output/Processed_Customer_Churn_Data.csv', index=False)
